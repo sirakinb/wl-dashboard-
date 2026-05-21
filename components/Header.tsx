@@ -4,13 +4,23 @@ import { CalendarDays, Scale } from "lucide-react";
 import { LiveBadge } from "./LiveBadge";
 
 export type DatePreset = "7" | "30" | "90" | "all";
+export type PracticeArea = "DLR" | "PI";
+
+const PRACTICE_AREA_LABELS: Record<PracticeArea, string> = {
+  DLR: "DLR",
+  PI: "Personal Injury",
+};
 
 export function DashboardHeader({
   preset,
   onPresetChange,
+  practiceArea,
+  onPracticeAreaChange,
 }: {
   preset: DatePreset;
   onPresetChange: (preset: DatePreset) => void;
+  practiceArea: PracticeArea;
+  onPracticeAreaChange: (practiceArea: PracticeArea) => void;
 }) {
   return (
     <header className="bg-[#1A2B4A] text-white">
@@ -31,9 +41,20 @@ export function DashboardHeader({
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <div className="rounded-full border border-[#A8C4E8]/50 bg-white/10 px-4 py-2 text-sm font-semibold">
-              DLR
-            </div>
+            <label className="inline-flex items-center gap-2 rounded-full border border-[#A8C4E8]/50 bg-white/10 px-4 py-2 text-sm">
+              <select
+                className="bg-transparent font-semibold text-white outline-none"
+                value={practiceArea}
+                onChange={(event) => onPracticeAreaChange(event.target.value as PracticeArea)}
+                aria-label="Practice area"
+              >
+                {Object.entries(PRACTICE_AREA_LABELS).map(([value, label]) => (
+                  <option key={value} className="text-slate-900" value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </label>
             <label className="inline-flex items-center gap-2 rounded-full border border-[#A8C4E8]/50 bg-white/10 px-4 py-2 text-sm">
               <CalendarDays className="size-4 text-[#A8C4E8]" aria-hidden />
               <select

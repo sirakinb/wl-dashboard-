@@ -19,8 +19,9 @@ import type { FunnelStatus, Lead } from "@/lib/types";
 const FILTERS: Array<{ value: "all" | FunnelStatus; label: string }> = [
   { value: "all", label: "All" },
   { value: "new-lead", label: "New" },
+  { value: "scheduled-consult", label: "Appointment" },
   { value: "sent-esign", label: "Sent" },
-  { value: "signed-esign", label: "Signed" },
+  { value: "converted", label: "Converted" },
   { value: "no-viable-case", label: "No Viable" },
   { value: "reschedule-needed", label: "Reschedule" },
   { value: "appointment-missed", label: "Appt Missed" },
@@ -41,8 +42,15 @@ function displayStatus(lead: Lead) {
   return cleaned || (lead.status ? STATUS_LABELS[lead.status] : "Unknown");
 }
 
-export function LeadTable({ leads }: { leads: Lead[] }) {
-  const [filter, setFilter] = useState<"all" | FunnelStatus>("all");
+export function LeadTable({
+  leads,
+  filter,
+  onFilterChange,
+}: {
+  leads: Lead[];
+  filter: "all" | FunnelStatus;
+  onFilterChange: (value: "all" | FunnelStatus) => void;
+}) {
   const [page, setPage] = useState(1);
   const pageSize = 10;
 
@@ -55,7 +63,7 @@ export function LeadTable({ leads }: { leads: Lead[] }) {
   const pageRows = filtered.slice((page - 1) * pageSize, page * pageSize);
 
   function changeFilter(value: "all" | FunnelStatus) {
-    setFilter(value);
+    onFilterChange(value);
     setPage(1);
   }
 
@@ -93,6 +101,13 @@ export function LeadTable({ leads }: { leads: Lead[] }) {
             </TableRow>
           </TableHeader>
           <TableBody>
+            {pageRows.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={5} className="h-28 text-center text-sm text-[#6B7280]">
+                  No leads match this view.
+                </TableCell>
+              </TableRow>
+            )}
             {pageRows.map((lead) => (
               <TableRow key={lead.id} className="cursor-pointer transition-colors hover:bg-[#F8FAFC]">
                 <TableCell>

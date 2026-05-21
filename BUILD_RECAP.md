@@ -2,7 +2,7 @@
 
 ## Summary
 
-Built a Next.js dashboard for White Law PLLC that pulls live Driver's License Restoration lead data from Law Ruler and presents a single-pane pipeline view for firm staff.
+Built a Next.js dashboard for White Law PLLC that pulls live lead data from Law Ruler and presents a single-pane pipeline view for firm staff.
 
 ## What Was Implemented
 
@@ -31,7 +31,9 @@ Built a Next.js dashboard for White Law PLLC that pulls live Driver's License Re
 - Added 60-second API response caching to reduce Law Ruler traffic.
 - Added retry/backoff handling for Law Ruler `429` rate-limit responses.
 - Implemented the documented Law Ruler timezone correction for API datetimes.
-- Used `ApiCases/GetInboxItems` for the main DLR lead list.
+- Used `ApiCases/SearchInboxItems` for the main lead list so selected date range, practice area, and status can be filtered inside Law Ruler.
+- Kept `ApiCases/GetInboxItems` as a fallback inbox reader.
+- Used `ApiReport/GetCustomReport` for report-backed source attribution.
 - Used `ApiCases/GetLead` for source enrichment where available.
 - Kept all Law Ruler API calls server-side. Browser code never receives Law Ruler credentials or access tokens.
 
@@ -39,6 +41,7 @@ Built a Next.js dashboard for White Law PLLC that pulls live Driver's License Re
 
 - Centralized status mapping in `lib/status-mapping.ts`.
 - The funnel groups raw Law Ruler statuses into dashboard buckets.
+- `Converted` is the final/main funnel status; DLR `Signed e-Sign` leads are counted as converted because a signed e-sign means the lead is becoming a client.
 - The lead table displays the actual Law Ruler status after cleaning trailing `**`, so rows match Law Ruler more directly.
 - Renamed the broad `Missed` display bucket to `Lost / Unresponsive`.
 
@@ -61,6 +64,7 @@ Built a Next.js dashboard for White Law PLLC that pulls live Driver's License Re
 
 ## Notes
 
-- The dashboard is filtered to DLR leads by case type.
-- `Unknown` in the Source Breakdown means the lead is DLR but the source field is missing or unavailable in Law Ruler.
+- The dashboard supports DLR and Personal Injury case type filters backed by Law Ruler case type IDs.
+- Status filters are backed by Law Ruler status IDs, while the local status mapper remains a display and grouping layer.
+- Source Breakdown is report-backed from Law Ruler's custom report API, which includes source directly.
 - Preview/production deployments should keep dashboard auth enabled and should not set `DASHBOARD_AUTH_DISABLED=true`.

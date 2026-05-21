@@ -3,8 +3,10 @@ export type FunnelStatus =
   | "no-viable-case"
   | "reschedule-needed"
   | "appointment-missed"
+  | "scheduled-consult"
   | "sent-esign"
   | "signed-esign"
+  | "converted"
   | "missed";
 
 export interface Lead {

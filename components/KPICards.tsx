@@ -4,15 +4,27 @@ import { ArrowDownRight, ArrowUpRight, Clock, FileCheck2, Target, Users } from "
 import { Card, CardContent } from "@/components/ui/card";
 import type { FunnelData } from "@/lib/types";
 import { CountUp } from "./CountUp";
+import type { PracticeArea } from "./Header";
 
-export function KPICards({ funnel }: { funnel: FunnelData }) {
+const PRACTICE_AREA_LABELS: Record<PracticeArea, string> = {
+  DLR: "DLR",
+  PI: "Personal Injury",
+};
+
+export function KPICards({
+  funnel,
+  practiceArea,
+}: {
+  funnel: FunnelData;
+  practiceArea: PracticeArea;
+}) {
   const cards = [
     {
       label: "Total Leads",
       value: funnel.totalLeads,
       suffix: "",
       icon: Users,
-      helper: "DLR leads in range",
+      helper: `${PRACTICE_AREA_LABELS[practiceArea]} leads in range`,
       delta: "Live count",
       positive: true,
     },
@@ -21,7 +33,7 @@ export function KPICards({ funnel }: { funnel: FunnelData }) {
       value: funnel.conversionRate,
       suffix: "%",
       icon: Target,
-      helper: "Signed e-Sign over total",
+      helper: "Converted leads over total",
       delta: "Current mix",
       positive: funnel.conversionRate > 0,
     },
@@ -30,7 +42,7 @@ export function KPICards({ funnel }: { funnel: FunnelData }) {
       value: funnel.avgDaysToConvert ?? 0,
       suffix: "d",
       icon: Clock,
-      helper: funnel.avgDaysToConvert === null ? "No signed leads in range" : "Open days for signed leads",
+      helper: funnel.avgDaysToConvert === null ? "No converted leads in range" : "Open days for converted leads",
       delta: funnel.avgDaysToConvert === null ? "Pending" : "Measured",
       positive: funnel.avgDaysToConvert !== null,
     },

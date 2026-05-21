@@ -1,27 +1,27 @@
 # White Law Lead Pipeline Dashboard
 
-White Law Lead Pipeline Dashboard is a focused operational dashboard for White Law PLLC. It turns live Law Ruler intake data into a clean daily view of Driver's License Restoration lead flow: who is coming in, where they came from, where they are in the pipeline, and which leads need attention.
+White Law Lead Pipeline Dashboard is a focused operational dashboard for White Law PLLC. It turns live Law Ruler intake data into a clean daily view of lead flow: who is coming in, where they came from, where they are in the pipeline, and which leads need attention.
 
 The goal is simple: give the firm a single-pane view of pipeline health without forcing staff to inspect Law Ruler row by row.
 
 ## What It Shows
 
-The dashboard is built around a DLR-first pipeline view:
+The dashboard is built around a DLR-first pipeline view with a selectable Personal Injury view:
 
-- **Total Leads**: the number of visible Driver's License Restoration leads in the selected date range.
-- **Conversion Rate**: signed e-sign leads as a share of total DLR leads.
+- **Total Leads**: the number of visible leads in the selected practice area and date range.
+- **Conversion Rate**: converted leads as a share of total leads in the selected practice area.
 - **Average Days**: average open age for signed leads in the current view.
 - **Top Source**: the strongest named attribution source available from Law Ruler.
-- **Main Funnel**: lead movement through the core path: New Lead, Sent e-Sign, Signed e-Sign.
+- **Main Funnel**: lead movement through the core path: New Lead, Appointment, Sent e-Sign, Converted.
 - **Branches / Drop-Offs**: side outcomes such as No Viable Case, Reschedule Needed, Appointment Missed, and Lost / Unresponsive.
-- **Source Breakdown**: distribution of leads by source, including `Unknown` when Law Ruler has no source recorded.
+- **Source Breakdown**: distribution of leads by source, including `Source unavailable` when Law Ruler's inbox result does not include source and the fast enrichment pass does not load it.
 - **Lead List**: a paginated table with real Law Ruler statuses, source, days open, and recent activity.
 
 ## Why It Matters
 
 Law Ruler is the system of record, but its native workflow is primarily lead-by-lead. This dashboard gives the firm a management view:
 
-- Staff can quickly see whether DLR lead volume is healthy.
+- Staff can quickly see whether DLR or Personal Injury lead volume is healthy.
 - Ownership can spot where leads are dropping off.
 - Marketing attribution becomes visible without exporting spreadsheets.
 - Intake follow-up issues become easier to catch.
@@ -33,13 +33,17 @@ All dashboard data comes from the live Law Ruler API.
 
 Current server-side integration:
 
-- `ApiCases/GetInboxItems` provides the DLR lead list and current status.
+- `ApiCases/SearchInboxItems` provides the lead list, case type, current status, and server-side Law Ruler filtering for selected date range, practice area, and status.
+- `ApiReport/GetCustomReport` provides report-backed source attribution for the Source Breakdown.
+- `ApiCases/GetInboxItems` remains as a fallback inbox reader.
 - `ApiCases/GetLead` enriches leads with source data where available.
 - OAuth access tokens are fetched server-side and cached in memory.
 - API responses are cached briefly to avoid hammering Law Ruler.
 - Browser code never receives Law Ruler credentials or access tokens.
 
-If the Source Breakdown shows `Unknown`, that means the lead is still DLR, but Law Ruler did not return a usable source for that lead.
+The dashboard uses Law Ruler case type IDs for DLR and Personal Injury, and Law Ruler status IDs for table status filters. That keeps views such as `last 90 days`, `Personal Injury`, and `Converted` aligned with Law Ruler before the data reaches the browser.
+
+The Source Breakdown is built from Law Ruler's custom report API because that report includes a `Source` column directly. The lead table is still built from the inbox API, so source values in individual table rows may be less complete than the report-backed source chart.
 
 ## Status Handling
 
@@ -49,7 +53,7 @@ The table intentionally shows the actual Law Ruler status after cleaning Law Rul
 - `No Viable Case**` displays as `No Viable Case`.
 - `Contact Attempted**` displays as `Contact Attempted`.
 
-The funnel still groups related statuses into dashboard buckets so the high-level view stays readable. Status grouping is centralized in:
+The funnel still groups related statuses into dashboard buckets so the high-level view stays readable. `Converted` is the terminal funnel stage; DLR `Signed e-Sign` leads are counted as converted because a signed e-sign means the DLR lead is becoming a client. Status grouping is centralized in:
 
 ```text
 lib/status-mapping.ts

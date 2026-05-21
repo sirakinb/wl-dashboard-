@@ -21,6 +21,7 @@ export function SourceBreakdown({ sources }: { sources: SourceCount[] }) {
         <CardTitle className="text-[12px] font-bold uppercase tracking-[1.5px] text-[#6B7280]">
           Source Breakdown
         </CardTitle>
+        <p className="text-xs text-[#6B7280]">From Law Ruler custom report</p>
       </CardHeader>
       <CardContent className="p-6 pt-2">
         <div className="flex flex-col items-center gap-6">

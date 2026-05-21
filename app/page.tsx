@@ -2,13 +2,13 @@
 
 import { subDays, format } from "date-fns";
 import useSWR from "swr";
-import { DashboardHeader, type DatePreset } from "@/components/Header";
+import { DashboardHeader, type DatePreset, type PracticeArea } from "@/components/Header";
 import { FunnelChart } from "@/components/FunnelChart";
 import { KPICards } from "@/components/KPICards";
 import { LeadTable } from "@/components/LeadTable";
 import { SourceBreakdown } from "@/components/SourceBreakdown";
 import { fetcher } from "@/lib/fetcher";
-import type { DashboardResponse } from "@/lib/types";
+import type { DashboardResponse, FunnelStatus } from "@/lib/types";
 import { useMemo, useState } from "react";
 
 function dateParams(preset: DatePreset) {
@@ -37,8 +37,14 @@ function DashboardSkeleton() {
 
 export default function Dashboard() {
   const [preset, setPreset] = useState<DatePreset>("30");
-  const query = useMemo(() => `/api/dashboard?practiceArea=DLR${dateParams(preset)}`, [preset]);
+  const [practiceArea, setPracticeArea] = useState<PracticeArea>("DLR");
+  const [statusFilter, setStatusFilter] = useState<"all" | FunnelStatus>("all");
+  const query = useMemo(
+    () => `/api/dashboard?practiceArea=${practiceArea}${dateParams(preset)}`,
+    [practiceArea, preset],
+  );
   const { data, error, isLoading } = useSWR<DashboardResponse>(query, fetcher, {
+    keepPreviousData: true,
     refreshInterval: 60_000,
     revalidateOnFocus: true,
   });
@@ -48,10 +54,12 @@ export default function Dashboard() {
       <DashboardHeader
         preset={preset}
         onPresetChange={setPreset}
+        practiceArea={practiceArea}
+        onPracticeAreaChange={setPracticeArea}
       />
 
       <div className="mx-auto max-w-7xl space-y-6 px-6 py-8 lg:px-8">
-        {isLoading && <DashboardSkeleton />}
+        {isLoading && !data && <DashboardSkeleton />}
 
         {error && (
           <div className="rounded-xl border border-red-200 bg-white p-6 text-red-700 shadow-sm">
@@ -62,14 +70,14 @@ export default function Dashboard() {
 
         {data && (
           <>
-            <KPICards funnel={data.funnel} />
+            <KPICards funnel={data.funnel} practiceArea={practiceArea} />
 
             <section className="grid gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
               <FunnelChart buckets={data.funnel.buckets} />
               <SourceBreakdown sources={data.sources} />
             </section>
 
-            <LeadTable leads={data.leads} />
+            <LeadTable leads={data.leads} filter={statusFilter} onFilterChange={setStatusFilter} />
           </>
         )}
       </div>
