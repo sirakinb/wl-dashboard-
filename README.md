@@ -14,7 +14,7 @@ The dashboard is built around a DLR-first pipeline view with a selectable Person
 - **Top Source**: the strongest named attribution source available from Law Ruler.
 - **Main Funnel**: lead movement through the core path: New Lead, Appointment, Sent e-Sign, Converted.
 - **Branches / Drop-Offs**: side outcomes such as No Viable Case, Reschedule Needed, Appointment Missed, and Lost / Unresponsive.
-- **Source Breakdown**: distribution of leads by source, including `Source unavailable` when Law Ruler's inbox result does not include source and the fast enrichment pass does not load it.
+- **Source Breakdown**: distribution of leads by source from Law Ruler's report data, with the lead table enriched from the same source attribution report when available.
 - **Lead List**: a paginated table with real Law Ruler statuses, source, days open, and recent activity.
 
 ## Why It Matters
@@ -34,7 +34,7 @@ All dashboard data comes from the live Law Ruler API.
 Current server-side integration:
 
 - `ApiCases/SearchInboxItems` provides the lead list, case type, current status, and server-side Law Ruler filtering for selected date range, practice area, and status.
-- `ApiReport/GetCustomReport` provides report-backed source attribution for the Source Breakdown.
+- `ApiReport/GetCustomReport` provides report-backed source attribution for the Source Breakdown and fills missing source values in the lead table by matching report rows to inbox leads.
 - `ApiCases/GetInboxItems` remains as a fallback inbox reader.
 - `ApiCases/GetLead` enriches leads with source data where available.
 - OAuth access tokens are fetched server-side and cached in memory.
@@ -43,7 +43,7 @@ Current server-side integration:
 
 The dashboard uses Law Ruler case type IDs for DLR and Personal Injury, and Law Ruler status IDs for table status filters. That keeps views such as `last 90 days`, `Personal Injury`, and `Converted` aligned with Law Ruler before the data reaches the browser.
 
-The Source Breakdown is built from Law Ruler's custom report API because that report includes a `Source` column directly. The lead table is still built from the inbox API, so source values in individual table rows may be less complete than the report-backed source chart.
+The Source Breakdown is built from Law Ruler's custom report API because that report includes a `Source` column directly. The lead table starts from the inbox API, then fills missing source values from the same report when the report row can be matched to the lead.
 
 ## Status Handling
 

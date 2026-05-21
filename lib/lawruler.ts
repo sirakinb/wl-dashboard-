@@ -63,6 +63,10 @@ type LeadDetailResponse = LeadDetail & {
 };
 
 type ReportRow = Record<string, string>;
+type SourceAttributionReport = {
+  sources: SourceCount[];
+  rows: ReportRow[];
+};
 
 function requiredEnv(name: string) {
   const value = process.env[name];
@@ -283,6 +287,36 @@ function splitName(fullName: string | undefined) {
   };
 }
 
+function normalizeLookupValue(value: string | undefined) {
+  return String(value ?? "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+}
+
+function sourceLookupKeys({
+  firstName,
+  lastName,
+  fullName,
+  phone,
+}: {
+  firstName?: string;
+  lastName?: string;
+  fullName?: string;
+  phone?: string;
+}) {
+  const keys: string[] = [];
+  const normalizedPhone = normalizeLookupValue(phone);
+  const normalizedFirst = normalizeLookupValue(firstName);
+  const normalizedLast = normalizeLookupValue(lastName);
+  const normalizedFull = normalizeLookupValue(fullName);
+
+  if (normalizedPhone) keys.push(`phone:${normalizedPhone}`);
+  if (normalizedFirst || normalizedLast) keys.push(`name:${normalizedFirst}:${normalizedLast}`);
+  if (normalizedFull) keys.push(`full:${normalizedFull}`);
+
+  return keys;
+}
+
 async function getLeadDetail(leadId: string) {
   const cached = leadDetailCache.get(leadId);
   if (cached && cached.expiresAt > Date.now()) return cached.value;
@@ -437,7 +471,7 @@ export async function getLeads({
   });
 }
 
-export async function getSourceReport({
+export async function getSourceAttributionReport({
   practiceArea = "DLR",
   startDate,
   endDate,
@@ -445,8 +479,8 @@ export async function getSourceReport({
   practiceArea?: string;
   startDate?: string | null;
   endDate?: string | null;
-}): Promise<SourceCount[]> {
-  const cacheKey = `source-report:${practiceArea}:${startDate ?? ""}:${endDate ?? ""}`;
+}): Promise<SourceAttributionReport> {
+  const cacheKey = `source-attribution-report:${practiceArea}:${startDate ?? ""}:${endDate ?? ""}`;
 
   return withTtl(cacheKey, 60_000, async () => {
     const pageSize = 500;
@@ -480,6 +514,45 @@ export async function getSourceReport({
       sourceMap.set(source, current);
     }
 
-    return [...sourceMap.values()].sort((a, b) => b.count - a.count);
+    return {
+      sources: [...sourceMap.values()].sort((a, b) => b.count - a.count),
+      rows,
+    };
+  });
+}
+
+export async function getSourceReport(params: {
+  practiceArea?: string;
+  startDate?: string | null;
+  endDate?: string | null;
+}): Promise<SourceCount[]> {
+  return (await getSourceAttributionReport(params)).sources;
+}
+
+export function applySourceAttribution(leads: Lead[], rows: ReportRow[]) {
+  const sourceByKey = new Map<string, string>();
+
+  for (const row of rows) {
+    const source = row.Source?.trim();
+    if (!source) continue;
+
+    const keys = sourceLookupKeys({
+      firstName: row["First Name"],
+      lastName: row["Last Name"],
+      fullName: [row["First Name"], row["Last Name"]].filter(Boolean).join(" "),
+      phone: row.Phone,
+    });
+
+    keys.forEach((key) => sourceByKey.set(key, source));
+  }
+
+  return leads.map((lead) => {
+    if (lead.source && lead.source !== "Source unavailable") return lead;
+
+    const source = sourceLookupKeys(lead)
+      .map((key) => sourceByKey.get(key))
+      .find(Boolean);
+
+    return source ? { ...lead, source } : lead;
   });
 }
